@@ -1,5 +1,6 @@
 ﻿using UdonSharp;
 using UnityEngine;
+using UnityEngine.UI;
 using VRC.SDK3.Components;
 using VRC.SDKBase;
 using VRC.Udon;
@@ -13,7 +14,7 @@ public class AvatarShelf : UdonSharpBehaviour
     [Space(-8)]
     [Header("Remote Avatar List | Prefab by Kitto Dev")]
     [Space(-8)]
-    [Header("Updated 9/5/2025 | Version 1.1")]
+    [Header("Updated 3/30/2026 | Version 1.2 Page Number Update")]
 
     [Header("Remote Config")]
     [Tooltip("Raw Pastebin URL (e.g., https://pastebin.com/raw/abc123) to pull avatar list from. Format each line as: 'AvatarID, AvatarName, CreatorName'")]
@@ -37,19 +38,66 @@ public class AvatarShelf : UdonSharpBehaviour
     [Tooltip("If true, all labels will be hidden regardless of creator")]
     [SerializeField] private bool hideLabels = false;
 
+    [Header("Page Number Display (Optional)")]
+    [Tooltip("TextMeshPro or Text component to show current page number")]
+    [SerializeField] private MaskableGraphic currentPageText;
+    [Tooltip("TextMeshPro or Text component to show total pages")]
+    [SerializeField] private MaskableGraphic totalPagesText;
+
     private string[] avatarLines;
     private int currentPage = 0;
     private int avatarsPerPage;
+    private System.Type displayType;
 
     void Start()
     {
         LoadList();
+
+        if (currentPageText == null)
+        {
+            return;
+        }
+
+        displayType = currentPageText.GetType();
+
+        if (displayType != typeof(Text) &&
+            displayType != typeof(TextMeshPro) &&
+            displayType != typeof(TextMeshProUGUI))
+        {
+            Debug.LogError("[AvatarShelf] Unsupported text component type! Use Text, TextMeshPro, or TextMeshProUGUI.");
+        }
     }
 
     private void LoadList()
     {
         avatarsPerPage = pedestals.Length;
         VRCStringDownloader.LoadUrl(avatarListUrl, (IUdonEventReceiver)this);
+    }
+
+    private void SetText(MaskableGraphic textComponent, string value)
+    {
+        if (textComponent == null)
+        {
+            return;
+        }
+
+        var componentType = textComponent.GetType();
+        if (componentType == typeof(Text))
+        {
+            ((Text)textComponent).text = value;
+            return;
+        }
+
+        if (componentType == typeof(TextMeshProUGUI))
+        {
+            ((TextMeshProUGUI)textComponent).text = value;
+            return;
+        }
+
+        if (componentType == typeof(TextMeshPro))
+        {
+            ((TextMeshPro)textComponent).text = value;
+        }
     }
 
     void OnEnable()
@@ -91,6 +139,14 @@ public class AvatarShelf : UdonSharpBehaviour
 
     private void UpdatePage()
     {
+        int maxPages = avatarsPerPage > 0 && avatarLines != null
+            ? Mathf.CeilToInt((float)avatarLines.Length / avatarsPerPage)
+            : 0;
+
+        int displayPage = maxPages > 0 ? currentPage + 1 : 0;
+        SetText(currentPageText, displayPage.ToString());
+        SetText(totalPagesText, maxPages.ToString());
+
         int startIndex = currentPage * avatarsPerPage;
 
         for (int i = 0; i < avatarsPerPage; i++)
