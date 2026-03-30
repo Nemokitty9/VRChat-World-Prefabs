@@ -1,5 +1,7 @@
 using UdonSharp;
 using UnityEngine;
+using UnityEngine.UI;
+using TMPro;
 using VRC.SDK3.Components;
 using VRC.SDKBase;
 using VRC.Udon;
@@ -12,7 +14,7 @@ public class WorldList : UdonSharpBehaviour
     [Space(-8)]
     [Header("Remote World List | Prefab by Kitto Dev")]
     [Space(-8)]
-    [Header("Updated 11/6/2025 | Version 1.0")]
+    [Header("Updated 3/30/2026 | Version 1.1 Page Number Update")]
 
     [Header("Remote Config")]
     [Tooltip("Raw Pastebin URL (e.g., https://pastebin.com/raw/abc123) to pull portal list from. Format each line as a single world ID (e.g., wrld_abc123)")]
@@ -22,19 +24,67 @@ public class WorldList : UdonSharpBehaviour
     [Tooltip("Assign portals in page order")]
     [SerializeField] private VRC_PortalMarker[] portals;
 
+    [Header("Page Number Display (Optional)")]
+    [Tooltip("TextMeshPro or Text component to show current page number")]
+    [SerializeField] private MaskableGraphic currentPageText;
+    [Tooltip("TextMeshPro or Text component to show total pages")]
+    [SerializeField] private MaskableGraphic totalPagesText;
+
+
     private string[] portalLines;
     private int currentPage = 0;
     private int portalsPerPage;
+    private System.Type displayType;
 
     void Start()
     {
         LoadList();
+
+        if (currentPageText == null)
+        {
+            return;
+        }
+
+        displayType = currentPageText.GetType();
+
+        if (displayType != typeof(Text) &&
+            displayType != typeof(TextMeshPro) &&
+            displayType != typeof(TextMeshProUGUI))
+        {
+            Debug.LogError("[WorldList] Unsupported text component type! Use Text, TextMeshPro, or TextMeshProUGUI.");
+        }
     }
 
     private void LoadList()
     {
         portalsPerPage = portals.Length;
         VRCStringDownloader.LoadUrl(worldListUrl, (IUdonEventReceiver)this);
+    }
+
+    private void SetText(MaskableGraphic textComponent, string value)
+    {
+        if (textComponent == null)
+        {
+            return;
+        }
+
+        var componentType = textComponent.GetType();
+        if (componentType == typeof(Text))
+        {
+            ((Text)textComponent).text = value;
+            return;
+        }
+
+        if (componentType == typeof(TextMeshProUGUI))
+        {
+            ((TextMeshProUGUI)textComponent).text = value;
+            return;
+        }
+
+        if (componentType == typeof(TextMeshPro))
+        {
+            ((TextMeshPro)textComponent).text = value;
+        }
     }
 
     void OnEnable()
@@ -76,6 +126,14 @@ public class WorldList : UdonSharpBehaviour
 
     private void UpdatePage()
     {
+        int maxPages = portalsPerPage > 0 && portalLines != null
+            ? Mathf.CeilToInt((float)portalLines.Length / portalsPerPage)
+            : 0;
+
+        int displayPage = maxPages > 0 ? currentPage + 1 : 0;
+        SetText(currentPageText, displayPage.ToString());
+        SetText(totalPagesText, maxPages.ToString());
+
         int startIndex = currentPage * portalsPerPage;
 
         for (int i = 0; i < portalsPerPage; i++)
