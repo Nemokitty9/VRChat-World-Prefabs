@@ -23,4 +23,4 @@ Includes modified code from the original **DateTime_UI** script by [Jetdog8808](
 - Player Counter Display (#C) | Shows the number of players currently connected in the instance.
 - Date & Time Display (#C) | Displays the current Date and Time.
 - Player Tracking (#C) | These scripts follow a part of the local player's body.
-- Remote Text Loader (#C) | Load a remote text URL from sites like Pastebin. Useful for news, updates, and changelogs.
+- Remote Text Loader (#C) | Load a remote text URL from sites like Pastebin or GitHub. Useful for news, updates, and changelogs.
