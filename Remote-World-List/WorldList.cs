@@ -14,22 +14,27 @@ public class WorldList : UdonSharpBehaviour
     [Space(-8)]
     [Header("Remote World List | Prefab by Kitto Dev")]
     [Space(-8)]
-    [Header("Updated 3/30/2026 | Version 1.1 Page Number Update")]
+    [Header("Updated 7/6/2026 | Version 1.2 QOL Update")]
 
     [Header("Remote Config")]
-    [Tooltip("Raw Pastebin URL (e.g., https://pastebin.com/raw/abc123) to pull portal list from. Format each line as a single world ID (e.g., wrld_abc123)")]
+    [Tooltip("Raw Text URL (e.g., https://pastebin.com/raw/abc123) to pull the portal list from. Format each line as a single world ID (e.g., wrld_abc123). Sites like Pastebin, or GitHub Gists are confirmed to work and is whitelisted by VRChat.")]
     [SerializeField] private VRCUrl worldListUrl;
 
     [Header("Portals Per Page")]
     [Tooltip("Assign portals in page order")]
     [SerializeField] private VRC_PortalMarker[] portals;
 
+    [Header("Page Navigation Buttons")]
+    [Tooltip("Button that moves to the previous page")]
+    [SerializeField] private Selectable previousPageButton;
+    [Tooltip("Button that moves to the next page")]
+    [SerializeField] private Selectable nextPageButton;
+
     [Header("Page Number Display (Optional)")]
     [Tooltip("TextMeshPro or Text component to show current page number")]
     [SerializeField] private MaskableGraphic currentPageText;
     [Tooltip("TextMeshPro or Text component to show total pages")]
     [SerializeField] private MaskableGraphic totalPagesText;
-
 
     private string[] portalLines;
     private int currentPage = 0;
@@ -39,6 +44,7 @@ public class WorldList : UdonSharpBehaviour
     void Start()
     {
         LoadList();
+        UpdatePageNavigationButtons();
 
         if (currentPageText == null)
         {
@@ -124,6 +130,26 @@ public class WorldList : UdonSharpBehaviour
         }
     }
 
+    private void UpdatePageNavigationButtons()
+    {
+        int maxPages = portalsPerPage > 0 && portalLines != null
+            ? Mathf.CeilToInt((float)portalLines.Length / portalsPerPage)
+            : 0;
+
+        bool canGoPrevious = maxPages > 1 && currentPage > 0;
+        bool canGoNext = maxPages > 1 && currentPage < maxPages - 1;
+
+        if (previousPageButton != null)
+        {
+            previousPageButton.interactable = canGoPrevious;
+        }
+
+        if (nextPageButton != null)
+        {
+            nextPageButton.interactable = canGoNext;
+        }
+    }
+
     private void UpdatePage()
     {
         int maxPages = portalsPerPage > 0 && portalLines != null
@@ -131,6 +157,7 @@ public class WorldList : UdonSharpBehaviour
             : 0;
 
         int displayPage = maxPages > 0 ? currentPage + 1 : 0;
+        UpdatePageNavigationButtons();
         SetText(currentPageText, displayPage.ToString());
         SetText(totalPagesText, maxPages.ToString());
 
