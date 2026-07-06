@@ -14,10 +14,10 @@ public class AvatarShelf : UdonSharpBehaviour
     [Space(-8)]
     [Header("Remote Avatar List | Prefab by Kitto Dev")]
     [Space(-8)]
-    [Header("Updated 3/30/2026 | Version 1.2 Page Number Update")]
+    [Header("Updated 7/6/2026 | Version 1.3 QOL Update")]
 
     [Header("Remote Config")]
-    [Tooltip("Raw Pastebin URL (e.g., https://pastebin.com/raw/abc123) to pull avatar list from. Format each line as: 'AvatarID, AvatarName, CreatorName'")]
+    [Tooltip("Raw Text URL (e.g., https://pastebin.com/raw/abc123) to pull avatar list from. Format each line as: 'AvatarID, AvatarName, CreatorName'. Sites like Pastebin, or GitHub Gists are confirmed to work and is whitelisted by VRChat.")]
     [SerializeField] private VRCUrl avatarListUrl;
 
     [Header("Avatar Pedestals Per Page")]
@@ -27,6 +27,12 @@ public class AvatarShelf : UdonSharpBehaviour
     [Header("TextMeshPro Labels")]
     [Tooltip("Assign TextMeshPro (non-UI) components to each pedestal. Ensure to assign them in the exact same order in the Pedestal array in order to properly label each pedestal.")]
     [SerializeField] private TextMeshPro[] pedestalLabels;
+
+    [Header("Page Navigation Buttons")]
+    [Tooltip("Button that moves to the previous page")]
+    [SerializeField] private Selectable previousPageButton;
+    [Tooltip("Button that moves to the next page")]
+    [SerializeField] private Selectable nextPageButton;
 
     [Header("Special Formatting")]
     [Tooltip("This formats a creator's name in a special color, useful for highlighting your own creations.")]
@@ -52,6 +58,7 @@ public class AvatarShelf : UdonSharpBehaviour
     void Start()
     {
         LoadList();
+        UpdatePageNavigationButtons();
 
         if (currentPageText == null)
         {
@@ -137,6 +144,26 @@ public class AvatarShelf : UdonSharpBehaviour
         }
     }
 
+    private void UpdatePageNavigationButtons()
+    {
+        int maxPages = avatarsPerPage > 0 && avatarLines != null
+            ? Mathf.CeilToInt((float)avatarLines.Length / avatarsPerPage)
+            : 0;
+
+        bool canGoPrevious = maxPages > 1 && currentPage > 0;
+        bool canGoNext = maxPages > 1 && currentPage < maxPages - 1;
+
+        if (previousPageButton != null)
+        {
+            previousPageButton.interactable = canGoPrevious;
+        }
+
+        if (nextPageButton != null)
+        {
+            nextPageButton.interactable = canGoNext;
+        }
+    }
+
     private void UpdatePage()
     {
         int maxPages = avatarsPerPage > 0 && avatarLines != null
@@ -144,6 +171,7 @@ public class AvatarShelf : UdonSharpBehaviour
             : 0;
 
         int displayPage = maxPages > 0 ? currentPage + 1 : 0;
+        UpdatePageNavigationButtons();
         SetText(currentPageText, displayPage.ToString());
         SetText(totalPagesText, maxPages.ToString());
 
